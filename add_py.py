@@ -8,55 +8,56 @@ Original file is located at
 """
 
 
-
-
 import streamlit as st
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import LabelEncoder
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-# This must be the first Streamlit command
+# Set up the Streamlit page
 st.set_page_config(page_title="Kamaraj College FAQ Chatbot", layout="centered")
 
-# Load model and data (caches for speed)
+# Load model and data (with caching)
 @st.cache_resource
 def load_model_and_data():
-    # Read the CSV from the local directory
-    ques = pd.read_csv("kamaraj_college_faq.csv")
-    ques.dropna(inplace=True)
+    # Load the dataset
+    df = pd.read_csv("kamaraj_college_faq.csv")
+    df.dropna(inplace=True)
 
-    # Encode answers
+    # Encode answers to numerical labels
     le = LabelEncoder()
-    ques["Answer_Label"] = le.fit_transform(ques["Answer"])
+    df["Answer_Label"] = le.fit_transform(df["Answer"])
 
-    # Vectorize the questions
+    # Vectorize questions
     vectorizer = TfidfVectorizer()
-    X = vectorizer.fit_transform(ques["Question"])
-    y = ques["Answer_Label"]
+    X = vectorizer.fit_transform(df["Question"])
+    y = df["Answer_Label"]
 
-    # Train the model
+    # Train a logistic regression model
     model = LogisticRegression()
     model.fit(X, y)
 
     return model, vectorizer, le
 
-# Load everything once
+# Load model, vectorizer, and encoder
 model, vectorizer, label_encoder = load_model_and_data()
 
-# Streamlit UI
+# App title
 st.title("🎓 Kamaraj College FAQ Chatbot")
-st.write("Ask any question related to **Kamaraj College of Engineering and Technology**:")
+st.markdown("Ask me anything related to **Kamaraj College of Engineering and Technology**! 🤖")
 
 # User input
-user_question = st.text_input("💬 Enter your question:")
+user_question = st.text_input("💬 Type your question here:")
 
-# Handle input
+# Button to get answer
 if st.button("🔍 Get Answer"):
-    if user_question.strip() == "":
-        st.warning("⚠️ Please enter a question.")
+    if not user_question.strip():
+        st.warning("⚠️ Please enter a valid question.")
     else:
-        vector = vectorizer.transform([user_question])
-        prediction = model.predict(vector)[0]
-        answer = label_encoder.inverse_transform([prediction])[0]
-        st.success(f"🟢 Answer: {answer}")
+        # Vectorize user input and predict answer
+        user_vector = vectorizer.transform([user_question])
+        predicted_label = model.predict(user_vector)[0]
+        predicted_answer = label_encoder.inverse_transform([predicted_label])[0]
+        
+        # Display answer
+        st.success(f"🟢 **Answer:** {predicted_answer}")
