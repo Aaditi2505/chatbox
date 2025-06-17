@@ -10,39 +10,44 @@ Original file is located at
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
-import matplotlib.pyplot as plt
 from sklearn.preprocessing import LabelEncoder
-from sklearn.feature_extraction.text import TfidfVectorizer # Import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 
-ques=pd.read_csv('/content/kamaraj_college_faq.csv')
-ques.head()
+# Load the dataset
+ques = pd.read_csv('/content/kamaraj_college_faq.csv')
 
-ques.isnull().sum()
+# Optional: Check for null values
+# print(ques.isnull().sum())
 
+# Remove rows with missing values
 ques.dropna(inplace=True)
 
-from sklearn.linear_model import LogisticRegression # Import LogisticRegression
+# Encode textual answers to numerical labels
+le = LabelEncoder()
+ques['Answer_Label'] = le.fit_transform(ques['Answer'])
 
-from sklearn.preprocessing import LabelEncoder
-
-le=LabelEncoder()
-ques['Answer']=le.fit_transform(ques['Answer'])
-
+# Vectorize the questions
 vectorizer = TfidfVectorizer()
-a = vectorizer.fit_transform(ques['Question'])
-b=ques['Answer']
-LO=LogisticRegression()
-LO.fit(a,b)
+X = vectorizer.fit_transform(ques['Question'])
+y = ques['Answer_Label']
 
-qu=input("Enter your question: ")
-# Remove the line below
-# el1=le.transform([qu])
-# print(el1)
-po=vectorizer.transform([qu])
-ans=LO.predict(po)
-# You may want to inverse transform the predicted answer back to its original string form
-predicted_answer_label = ans[0] # Get the predicted integer label
-# Find the original string answer corresponding to this label
-original_answer = le.inverse_transform([predicted_answer_label])
-print("Predicted answer label:", predicted_answer_label)
-print("Predicted answer:", original_answer[0])
+# Train logistic regression model
+model = LogisticRegression()
+model.fit(X, y)
+
+# Get input from user
+qu = input("Enter your question: ")
+
+if qu.strip():
+    # Vectorize the input question
+    user_vector = vectorizer.transform([qu])
+    
+    # Predict the label
+    predicted_label = model.predict(user_vector)[0]
+    
+    # Convert label back to original answer text
+    predicted_answer = le.inverse_transform([predicted_label])[0]
+    
+    print("Predicted answer:", predicted_answer)
+else:
+    print("Please enter a valid question.")
